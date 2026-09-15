@@ -171,6 +171,7 @@ docker_error_old_databases() {
 # process initializer files, based on file extensions and permissions
 docker_process_init_files() {
 	# psql here for backwards compatibility "${psql[@]}"
+	# shellcheck disable=SC2034
 	psql=( docker_process_sql )
 
 	printf '\n'
@@ -185,6 +186,7 @@ docker_process_init_files() {
 					"$f"
 				else
 					printf '%s: sourcing %s\n' "$0" "$f"
+					# shellcheck source=/dev/null
 					. "$f"
 				fi
 				;;
@@ -209,20 +211,21 @@ docker_process_sql() {
 		query_runner+=( --dbname "$POSTGRES_DB" )
 	fi
 
-	PGHOST= PGHOSTADDR= "${query_runner[@]}" "$@"
+	PGHOST='' PGHOSTADDR='' "${query_runner[@]}" "$@"
 }
 
 # create initial database
 # uses environment variables for input: POSTGRES_DB
 docker_setup_db() {
 	local dbAlreadyExists
+	local db="$POSTGRES_DB"
 	dbAlreadyExists="$(
-		POSTGRES_DB= docker_process_sql --dbname postgres --set db="$POSTGRES_DB" --tuples-only <<-'EOSQL'
+		POSTGRES_DB='' docker_process_sql --dbname postgres --set db="$db" --tuples-only <<-'EOSQL'
 			SELECT 1 FROM pg_database WHERE datname = :'db' ;
 		EOSQL
 	)"
 	if [ -z "$dbAlreadyExists" ]; then
-		POSTGRES_DB= docker_process_sql --dbname postgres --set db="$POSTGRES_DB" <<-'EOSQL'
+		POSTGRES_DB='' docker_process_sql --dbname postgres --set db="$db" <<-'EOSQL'
 			CREATE DATABASE :"db" ;
 		EOSQL
 		printf '\n'
@@ -298,7 +301,7 @@ docker_temp_server_start() {
 
 	# unset NOTIFY_SOCKET so the temporary server doesn't prematurely notify
 	# any process supervisor.
-	NOTIFY_SOCKET= \
+	NOTIFY_SOCKET='' \
 	PGUSER="${PGUSER:-$POSTGRES_USER}" \
 	pg_ctl -D "$PGDATA" \
 		-o "$(printf '%q ' "$@")" \
@@ -340,7 +343,7 @@ _main() {
 		docker_create_db_directories
 		if [ "$(id -u)" = '0' ]; then
 			# then restart script as postgres user
-			exec gosu postgres "$BASH_SOURCE" "$@"
+			exec gosu postgres "${BASH_SOURCE[0]}" "$@"
 		fi
 
 		# only run initialization on an empty data directory
