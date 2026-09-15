@@ -3,4 +3,4 @@ name: postgres
 description: A Helm chart for joeckr postgres
 type: application
 version: 0.1.0
-appVersion: "1.16.0"
+appVersion: "0.1.0"
