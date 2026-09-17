@@ -1,18 +1,18 @@
 services:
-    postgres:
-      container_name: postgres
-      build:
-        context: .
-        dockerfile: Dockerfile
-      ports:
-        - "5432:5432"
-      environment:
-        POSTGRES_USER: postgres
-        POSTGRES_PASSWORD: replaceme
-        POSTGRES_DB: postgres
-      volumes:
-        - pgdata:/tmp
-        - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:z
+  postgres:
+    container_name: postgres
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: replaceme  # betterleaks:allow
+      POSTGRES_DB: postgres
+    volumes:
+      - pgdata:/tmp
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:z
 
 volumes:
   pgdata:

@@ -95,7 +95,7 @@ From the repository root:
 
 ```bash
 helm upgrade --install postgres ./chart \
-  --set postgres.password="your-secure-password"
+  --set postgres.password="your-secure-password" # betterleaks:allow
 ```
 
 ---

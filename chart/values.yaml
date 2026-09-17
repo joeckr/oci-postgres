@@ -2,14 +2,17 @@ postgres:
   name: postgres
   app: postgres
   replicaCount: 1
-  resources: { limits: { cpu: 100m, memory: 200Mi } }
+  resources:
+    limits:
+      cpu: 100m
+      memory: 200Mi
   image: ghcr.io/joeckr/postgres
   tag: latest
   pullPolicy: Always
   port: 5432
   db: postgres
   user: postgres
-  password: changeme
+  password: changeme  # betterleaks:allow
   storageAccessMode: ReadWriteOnce
   storageSize: 1Gi
   storageClass: ""
