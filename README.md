@@ -77,6 +77,7 @@ A Helm chart is available in the [`chart/`](chart/) directory and is published a
 | `postgres.name` | Deployment and service name | `postgres` |
 | `postgres.app` | Application label | `postgres` |
 | `postgres.replicaCount` | Number of replicas | `1` |
+| `postgres.resources` | Resource requests and limits | `{ limits: { cpu: 100m, memory: 200Mi } }` |
 | `postgres.image` | Container image repository | `ghcr.io/joeckr/postgres` |
 | `postgres.tag` | Image tag | `latest` |
 | `postgres.pullPolicy` | Image pull policy | `Always` |
@@ -95,7 +96,7 @@ From the repository root:
 
 ```bash
 helm upgrade --install postgres ./chart \
-  --set postgres.password="your-secure-password"
+  --set postgres.password="your-secure-password" # betterleaks:allow
 ```
 
 ---
@@ -116,7 +117,7 @@ This ensures any assigned user ID within GID 0 can create the data directory, ma
 
 ## Local Development & Contributing
 
-This project uses [`mise`](https://mise.jdx.dev/) for tool management and [`prek`](https://github.com/jdx/prek) for pre-commit checks.
+This project uses [`mise`](https://mise.jdx.dev/) for tool management and [`hk`](https://github.com/jdx/hk) for pre-commit checks and code quality hooks.
 
 ### Setup
 
@@ -129,7 +130,7 @@ mise run install
 
 | Command | Description |
 | :--- | :--- |
-| `mise run prek` | Run pre-commit linters (`shellcheck`, `hadolint`, `helm lint`, `actionlint`, etc.) |
+| `mise run hk` *(or `check`)* | Run git hooks and linters (`betterleaks`, `actionlint`, `zizmor`, `hadolint`, `shellcheck`, `yamllint`, `helm lint`, `tombi`, `pkl`, etc.) |
 | `mise run build` | Build container image locally using Docker Buildx |
 | `mise run compose` | Start local development environment via Docker Compose |
 | `mise run trivy-fs` | Scan repository files for vulnerabilities with Trivy |
@@ -137,6 +138,12 @@ mise run install
 
 ---
 
+## Support
+
+If you find this project useful, consider supporting my work on [Ko-fi](https://ko-fi.com/joeckr):
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/joeckr)
+
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+Please refer to the `LICENSE` file for details.
