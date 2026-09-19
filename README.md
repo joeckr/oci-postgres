@@ -50,7 +50,7 @@ docker run -d \
 
 ### Docker Compose
 
-A local [`docker-compose.yml`](docker-compose.yml) is included for testing:
+A local [`compose.yml`](compose.yml) is included for testing:
 
 ```bash
 docker compose up -d
