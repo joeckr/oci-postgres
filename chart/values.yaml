@@ -18,4 +18,4 @@ postgres:
   storageClass: ""
 
 initSchema:
-  enabled: true
+  enabled: false
