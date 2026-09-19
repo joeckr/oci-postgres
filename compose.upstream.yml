@@ -1,0 +1,17 @@
+services:
+  postgres:
+    container_name: postgres-upstream
+    image: postgres:18-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: replaceme # betterleaks:allow
+      POSTGRES_DB: postgres
+    volumes:
+      - up-pgdata:/var/lib/postgresql/18/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:z
+
+volumes:
+  up-pgdata:
+    driver: local
