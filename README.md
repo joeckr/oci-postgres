@@ -31,37 +31,95 @@ Images are built from official Alpine base images as defined in [`versions.json`
 
 ---
 
-## Quick Start
+## Local Environment & Podman Setup
 
-### Docker Run
+To ensure containerized applications and Helm charts tested locally run cleanly when deployed to OpenShift or Kubernetes, this repository is designed to be used alongside the Podman configuration in [joeckr/dotfiles](https://github.com/joeckr/dotfiles).
 
-```bash
-docker run -d \
-  --name postgres \
-  -p 5432:5432 \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=mysecretpassword \
-  -e POSTGRES_DB=postgres \
-  -v pgdata:/tmp \
-  ghcr.io/joeckr/postgres:latest
+The dotfiles repository provides a centralized [`containers.conf`](https://github.com/joeckr/dotfiles/blob/main/containers/containers.conf) (deployed to `~/.config/containers/containers.conf`) that configures Podman to simulate OpenShift's default **`restricted-v2` Security Context Constraints (SCC)**:
+
+| OpenShift SCC Rule | Podman Configuration | Description |
+|---|---|---|
+| **Random UID (`MustRunAsRange`)** | `userns = "auto"` | Allocates dynamic subordinate UID/GID ranges from `/etc/subuid` and `/etc/subgid`. Containers run unprivileged without mapping host root. |
+| **Drop Capabilities** | `default_capabilities = ["NET_BIND_SERVICE"]` | Drops standard root capabilities (`CHOWN`, `DAC_OVERRIDE`, `FOWNER`, `SETUID`, `SETGID`, `SYS_CHROOT`, etc.) and permits only `NET_BIND_SERVICE`. |
+| **Disallow Privileged** | `privileged = false` | Disallows privileged container execution by default. |
+| **Seccomp Profile** | `seccomp_profile = "/usr/share/containers/seccomp.json"` | Enforces the runtime default seccomp profile (`RuntimeDefault`). |
+| **Namespace Isolation** | `cgroupns`, `ipcns`, `pidns`, `utsns = "private"` | Enforces private container namespaces (host namespaces are forbidden in restricted SCC). |
+
+### macOS Podman Machine Integration
+
+On macOS, the dotfiles installer script (`brew/podman.sh`) automates the machine lifecycle:
+
+1. Deploys `containers/containers.conf` to `~/.config/containers/containers.conf` on the host.
+2. Initializing `podman machine init` automatically mounts `~/.config/containers` into `/etc/containers` inside the Fedora CoreOS VM.
+3. Automatically symlinks `/etc/containers/containers.conf` to the VM user's config (`~core/.config/containers/containers.conf`) and restarts the Podman API service so all container executions immediately enforce these constraints.
+
+## Testing with Podman Compose
+
+Two Compose configurations are provided to facilitate testing, benchmarking, and debugging:
+
+### 1. Upstream Baseline (`compose.upstream.yml`)
+
+The [`compose.upstream.yml`](compose.upstream.yml) file runs the original, unmodified upstream container image (`postgres:18-alpine`):
+
+```sh
+# Start upstream container
+podman compose -f compose.upstream.yml up -d
 ```
 
-> **Note**: Mount persistent storage to `/tmp` because `PGDATA` defaults to `/tmp/data`.
+**Why test upstream?**
+Running the unmodified image against your SCC-compliant Podman setup simulates deploying standard public images directly into OpenShift. This will typically surface common failures:
+- Standard upstream PostgreSQL images set `PGDATA` to `/var/lib/postgresql/data` (owned by UID 999 `postgres`), failing when OpenShift assigns arbitrary non-zero UIDs.
+- Inability to write or create Unix sockets in `/var/run/postgresql` without group 0 permissions.
+- Inability to perform privileged `chown` operations due to dropped capabilities.
 
-### Docker Compose
+### 2. Modified Image (`compose.yml`)
 
-A local [`compose.yml`](compose.yml) is included for testing:
+The [`compose.yml`](compose.yml) file builds and runs the customized `Dockerfile` containing the adaptations required for OpenShift and rootless environments:
 
-```bash
-docker compose up -d
+```sh
+# Build and start the modified compliant container
+podman compose up -d --build
+
+# Or via mise
+mise run compose
 ```
 
-To initialize your own custom schema on first run, mount your SQL script into `/docker-entrypoint-initdb.d/`:
+This verified configuration applies:
+- Group 0 (`root` group) write permissions across `/tmp` and `/var/run/postgresql`.
+- Sets `PGDATA=/tmp/data` and mounts persistent storage to `/tmp`.
+- Automatic schema initialization by mounting custom `.sql` scripts into `/docker-entrypoint-initdb.d/schema.sql:z`.
 
-```yaml
-volumes:
-  - pgdata:/tmp
-  - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql:z
+**Default Credentials:**
+- **Port:** `5432`
+- **Database:** `postgres`
+- **User:** `postgres`
+- **Password:** `mysecretpassword`
+
+### Stopping Containers
+
+```sh
+# Stop modified compose stack
+podman compose down
+# or: mise run down
+
+# Stop upstream compose stack
+podman compose -f compose.upstream.yml down
+
+# View logs
+podman compose logs -f
+# or: mise run logs
+```
+
+### Local Helm Testing (Podman Play Kube)
+
+Test rendered Helm chart manifests directly in Podman without requiring a remote cluster:
+
+```sh
+# Render Helm template and run pods locally via podman play kube
+mise run play
+
+# Stop and tear down local pods
+mise run downplay
 ```
 
 ---
@@ -130,9 +188,17 @@ mise run install
 
 | Command | Description |
 | :--- | :--- |
+| `mise run install` | Install tools and git hooks (`hk install --mise`) |
 | `mise run hk` *(or `check`)* | Run git hooks and linters (`betterleaks`, `actionlint`, `zizmor`, `hadolint`, `shellcheck`, `yamllint`, `helm lint`, `tombi`, `pkl`, etc.) |
-| `mise run build` | Build container image locally using Docker Buildx |
-| `mise run compose` | Start local development environment via Docker Compose |
+| `mise run compose` | Start local development environment via Podman Compose (`podman compose up -d --build`) |
+| `mise run down` | Stop local Podman Compose stack (`podman compose down`) |
+| `mise run logs` | View Podman Compose logs (`podman compose logs -f`) |
+| `mise run play` | Test Helm chart manifests locally with Podman Play Kube (`podman play kube rendered.yaml`) |
+| `mise run downplay` | Stop and tear down Podman Play Kube pods (`podman play kube rendered.yaml --down`) |
+| `mise run helm-lint` | Lint the Helm chart (`helm lint chart/`) |
+| `mise run helm-template` | Render Helm chart templates to `rendered.yaml` (`helm template test chart/ > rendered.yaml`) |
+| `mise run helm-dep` | Build Helm chart dependencies (`helm dependency build chart/`) |
+| `mise run build` | Build container image locally using Podman Buildx |
 | `mise run trivy-fs` | Scan repository files for vulnerabilities with Trivy |
 | `mise run trivy-image` | Build and scan container image with Trivy |
 
