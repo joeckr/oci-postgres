@@ -124,12 +124,10 @@ The [`compose.upstream.yml`](compose.upstream.yml) configuration runs the origin
 
 ```sh
 # Start upstream container
-mise run compose-up
-# or: podman compose -f compose.upstream.yml up -d
+podman compose -f compose.upstream.yml up -d
 
 # Stop upstream container
-mise run down-up
-# or: podman compose -f compose.upstream.yml down
+podman compose -f compose.upstream.yml down
 ```
 
 **Why test upstream?**
@@ -181,11 +179,11 @@ Before deploying to an actual Kubernetes cluster, you can test the rendered Kube
 mise run play
 
 # Teardown the played pod and resources
-mise run downplay
+mise run play-d
 ```
 
 **How `mise run play` works:**
-1. Triggers the dependent task `mise run helm-template`, which executes:
+1. Triggers the dependent task `mise run helm-t`, which executes:
    ```sh
    helm dependency build chart/
    helm template test chart/ > rendered.yaml
@@ -211,13 +209,13 @@ podman logs -f postgres-pod-postgres
 
 **Teardown:**
 ```sh
-mise run downplay
+mise run play-d
 # or: podman play kube rendered.yaml --down
 ```
 
 ---
 
-### Tier 4: Cluster Deployment & Testing on Talos Linux (`mise run helm-install`)
+### Tier 4: Cluster Deployment & Testing on Talos Linux (`mise run helm-i`)
 
 The final phase validates the workload on a live **Talos Linux** Kubernetes cluster. This tests real-world Pod Security Admission (PSA) enforcement, CSI storage provisioning, network policies, and database startup.
 
@@ -237,15 +235,16 @@ mise run build
 
 Configure `chart/values.yaml` for Talos Linux:
 - **StorageClass**: If your Talos cluster uses a specific CSI storage provisioner (e.g., `local-path`, `mayastor`, `ceph-block`), configure `postgres.storageClass` in `values.yaml` or leave it empty `""` to use the cluster's default StorageClass.
+- **Security Context & fsGroup**: Under `postgres.podSecurityContext`, `fsGroup: 1031` ensures mounted storage has permissions accessible by the container user in vanilla Kubernetes / Talos Linux. If deploying to OpenShift, remove or comment out `fsGroup` as OpenShift's SCC allocates fsGroup dynamically.
 
 #### 2. Linting & Template Validation
 
 ```sh
 # Lint the chart for syntax and formatting errors
-mise run helm-lint
+mise run helm-l
 
 # Inspect the rendered manifests before installation
-mise run helm-template
+mise run helm-t
 cat rendered.yaml
 ```
 
@@ -253,7 +252,7 @@ cat rendered.yaml
 
 Install the Helm chart release:
 ```sh
-mise run helm-install
+mise run helm-i
 # or: helm install test chart/
 ```
 
@@ -292,7 +291,7 @@ kubectl port-forward svc/postgres 5432:5432
 
 When testing is complete, clean up the release:
 ```sh
-mise run helm-uninstall
+mise run helm-u
 # or: helm uninstall test
 ```
 
@@ -320,6 +319,8 @@ A Helm chart is available in the [`chart/`](chart/) directory and is published a
 | `postgres.storageSize` | Persistent volume claim size | `1Gi` |
 | `postgres.storageAccessMode` | PVC access mode | `ReadWriteOnce` |
 | `postgres.storageClass` | Storage class name (empty uses default) | `""` |
+| `postgres.podSecurityContext` | Pod security context (runAsNonRoot, seccompProfile, fsGroup) | `runAsNonRoot: true`, `RuntimeDefault`, `fsGroup: 1031` |
+| `postgres.securityContext` | Container security context (capabilities, allowPrivilegeEscalation) | `allowPrivilegeEscalation: false`, `drop: [ALL]` |
 | `initSchema.enabled` | Enable ConfigMap-based schema initialization | `true` |
 
 ### Installing the Chart
@@ -368,19 +369,17 @@ Run tasks with `mise run <task>`:
 | `hk` (or `check`) | Run all linters and hook checks | `hk check --all` |
 | `compose` | Start local container stack with Podman Compose | `podman compose up -d --build` |
 | `down` | Stop local Podman Compose stack | `podman compose down` |
-| `compose-up` | Run unmodified upstream baseline container | `podman compose -f compose.upstream.yml up -d` |
-| `down-up` | Stop upstream baseline container stack | `podman compose -f compose.upstream.yml down` |
 | `logs` | View Podman Compose logs | `podman compose logs -f` |
 | `play` | Test Helm chart manifests locally with Podman Play Kube | `podman play kube rendered.yaml` |
-| `downplay` | Stop and remove Podman Play Kube pods | `podman play kube rendered.yaml --down` |
-| `helm-dep` | Build Helm chart dependencies | `helm dependency build chart/` |
-| `helm-lint` | Lint Helm chart | `helm lint chart/` |
-| `helm-template` | Render Helm chart templates to `rendered.yaml` | `helm template test chart/ > rendered.yaml` |
-| `helm-install` | Install Helm chart to current Kubernetes cluster | `helm install test chart/` |
-| `helm-uninstall` | Uninstall Helm chart release from cluster | `helm uninstall test` |
+| `play-d` | Stop and remove Podman Play Kube pods | `podman play kube rendered.yaml --down` |
+| `helm-d` | Build Helm chart dependencies | `helm dependency build chart/` |
+| `helm-l` | Lint Helm chart | `helm lint chart/` |
+| `helm-t` | Render Helm chart templates to `rendered.yaml` | `helm template test chart/ > rendered.yaml` |
+| `helm-i` | Install Helm chart to current Kubernetes cluster | `helm install test chart/` |
+| `helm-u` | Uninstall Helm chart release from cluster | `helm uninstall test` |
 | `build` | Build container image locally with Podman Buildx | `podman buildx build --platform linux/amd64 -t ghcr.io/joeckr/postgres:test . --load` |
 | `trivy-fs` | Scan repository filesystem for security vulnerabilities | `trivy fs .` |
-| `trivy-image` | Scan built container image with Trivy | `trivy image ghcr.io/joeckr/postgres:test` |
+| `trivy-i` | Scan built container image with Trivy | `trivy image ghcr.io/joeckr/postgres:test` |
 
 
 ---
