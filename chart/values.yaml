@@ -16,6 +16,8 @@ postgres:
   storageAccessMode: ReadWriteOnce
   storageSize: 1Gi
   storageClass: ""
+  fsGroup: 1031
+  openshift: false
 
 initSchema:
   enabled: false
