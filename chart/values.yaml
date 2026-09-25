@@ -16,8 +16,16 @@ postgres:
   storageAccessMode: ReadWriteOnce
   storageSize: 1Gi
   storageClass: ""
-  fsGroup: 1031
-  openshift: false
+  podSecurityContext:
+    runAsNonRoot: true
+    seccompProfile:
+      type: RuntimeDefault
+    fsGroup: 1031 # take this out if deploying to OpenShift
+  securityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+        - ALL
 
 initSchema:
   enabled: false

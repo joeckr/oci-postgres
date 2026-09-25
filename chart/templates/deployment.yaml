@@ -14,15 +14,10 @@ spec:
       labels:
         app: {{ .Values.postgres.app }}
     spec:
+      {{- with .Values.postgres.podSecurityContext }}
       securityContext:
-        runAsNonRoot: true
-        seccompProfile:
-          type: RuntimeDefault
-        {{- if and (not .Values.postgres.openshift) (not (.Capabilities.APIVersions.Has "security.openshift.io/v1")) }}
-        {{- if .Values.postgres.fsGroup }}
-        fsGroup: {{ .Values.postgres.fsGroup }}
-        {{- end }}
-        {{- end }}
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
       automountServiceAccountToken: false
       volumes:
         - name: postgres-storage
@@ -35,11 +30,10 @@ spec:
         {{- end }}
       containers:
         - name: {{ .Values.postgres.name }}
+          {{- with .Values.postgres.securityContext }}
           securityContext:
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           image: "{{ .Values.postgres.image }}:{{ .Values.postgres.tag }}"
           imagePullPolicy: {{ .Values.postgres.pullPolicy }}
           ports:
