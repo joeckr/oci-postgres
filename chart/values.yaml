@@ -1,6 +1,5 @@
-postgres:
+app:
   name: postgres
-  app: postgres
   replicaCount: 1
   resources:
     limits:
