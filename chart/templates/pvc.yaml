@@ -3,13 +3,13 @@ kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
   labels:
-    app: {{ .Values.postgres.app }}
+    app: {{ .Values.app.name }}
 spec:
   accessModes:
-    - {{ .Values.postgres.storageAccessMode }}
+    - {{ .Values.app.storageAccessMode }}
   resources:
     requests:
-      storage: {{ .Values.postgres.storageSize }}
-  {{- if .Values.postgres.storageClass }}
-  storageClassName: {{ .Values.postgres.storageClass | quote }}
+      storage: {{ .Values.app.storageSize }}
+  {{- if .Values.app.storageClass }}
+  storageClassName: {{ .Values.app.storageClass | quote }}
   {{- end }}
