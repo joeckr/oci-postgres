@@ -6,8 +6,9 @@ app:
       cpu: 100m
       memory: 200Mi
   image: ghcr.io/joeckr/postgres
-  tag: latest
-  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+  pullPolicy: IfNotPresent
   port: 5432
   db: postgres
   user: postgres
