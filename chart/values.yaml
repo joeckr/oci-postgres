@@ -12,7 +12,7 @@ app:
   port: 5432
   db: postgres
   user: postgres
-  password: changeme  # betterleaks:allow
+  podAnnotations: {}
   storageAccessMode: ReadWriteOnce
   storageSize: 1Gi
   storageClass: ""
@@ -29,3 +29,12 @@ app:
 
 initSchema:
   enabled: false
+
+secret:
+  # Set create: false or provide existingSecret when managing secrets externally (e.g. External Secrets Operator).
+  create: true
+  existingSecret: ""
+  keys:
+    password: "POSTGRES_PASSWORD"  # betterleaks:allow
+  data:
+    POSTGRES_PASSWORD: "changeme"  # betterleaks:allow
