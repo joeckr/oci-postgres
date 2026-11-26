@@ -22,7 +22,7 @@ Built on top of official Alpine PostgreSQL images, this repository provides auto
 
 ## Container Images
 
-Images are built from the official `postgres:18-alpine` base image defined in [`Dockerfile`](Dockerfile) and published to GHCR under `ghcr.io/joeckr/postgres` with the semantic release version tag and `latest`.
+Images are built from the official `postgres:18.6-alpine` base image defined in [`Dockerfile`](Dockerfile) and published to GHCR under `ghcr.io/joeckr/postgres` with the semantic release version tag and `latest`.
 
 ---
 

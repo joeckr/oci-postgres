@@ -1,6 +1,4 @@
-ARG VERSION=18
-ARG REGISTRY=docker.io/library
-FROM $REGISTRY/postgres:$VERSION-alpine
+FROM docker.io/library/postgres:18.6-alpine
 
 ENV PGDATA=/tmp/data
 ENV LANG=C.UTF-8
