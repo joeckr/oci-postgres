@@ -2,7 +2,7 @@
 
 A rootless, hardened PostgreSQL container image and Helm chart designed to run under arbitrary user IDs (UIDs) in restricted security contexts such as Kubernetes restricted Pod Security Standards.
 
-Built on top of official Alpine PostgreSQL images, this repository provides automated multi-version matrix builds, rootless permission handling, and first-class Helm support.
+Built on top of official Alpine PostgreSQL images, this repository provides automated semantic-versioned container builds, rootless permission handling, and first-class Helm support.
 
 ---
 
@@ -12,7 +12,7 @@ Built on top of official Alpine PostgreSQL images, this repository provides auto
 - **Rootless & Hardened Kubernetes Ready**: Runs seamlessly under arbitrary non-root user IDs by configuring group 0 (`root` group) permissions (`chmod -R g+rwX`).
 - **Kubernetes PSS Restricted Compatible**: Fully compliant with upstream Kubernetes Pod Security Standards (`restricted` PSS/PSA level) for hardened cluster environments.
 - **Hardened Storage Defaults**: Defaults `PGDATA` to `/tmp/data` and mounts persistent storage to `/tmp`, avoiding elevated privilege requirements.
-- **Multi-Version Matrix**: Dynamically builds and publishes images for multiple active PostgreSQL major versions via GitHub Actions.
+- **Semantic Release Builds**: Automatically builds and publishes multi-arch images tagged with the semantic release version and `latest` via GitHub Actions.
 - **Schema Initialization**: Automated database seeding on first startup by mounting custom `.sql` or `.sh` scripts into `/docker-entrypoint-initdb.d/`.
 - **Helm Chart Included**: Ready-to-deploy chart located in [`chart/`](chart/) with configurable Persistent Volume Claims (PVC) and ConfigMap-based schema initialization.
 - **Multi-Tier Testing Pipeline**: Integrated with `mise` for a 4-tier testing workflow spanning upstream comparison, local container validation, local Kubernetes manifest testing, and live Kubernetes cluster deployment.
@@ -20,17 +20,9 @@ Built on top of official Alpine PostgreSQL images, this repository provides auto
 
 ---
 
-## Supported Versions
+## Container Images
 
-Images are built from official Alpine base images as defined in [`versions.json`](versions.json):
-
-| PostgreSQL Version | Upstream Version | Image Tags |
-| :--- | :--- | :--- |
-| **18** (Default / Latest) | `18.6` | `ghcr.io/joeckr/postgres:18`, `ghcr.io/joeckr/postgres:latest` |
-| **17** | `17.11` | `ghcr.io/joeckr/postgres:17` |
-| **16** | `16.15` | `ghcr.io/joeckr/postgres:16` |
-| **15** | `15.19` | `ghcr.io/joeckr/postgres:15` |
-| **14** | `14.24` | `ghcr.io/joeckr/postgres:14` |
+Images are built from the official `postgres:18-alpine` base image defined in [`Dockerfile`](Dockerfile) and published to GHCR under `ghcr.io/joeckr/postgres` with the semantic release version tag and `latest`.
 
 ---
 
